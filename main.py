@@ -1,12 +1,12 @@
 import sys
 # from morph_api_tomcart import execute_rest, await_job_exec_status
-from api import execute_rest, refresh_access_token, create_cypher, get_current_token
+from morph_api_tomcart import refresh_access_token, create_cypher, get_current_token
 
-appliance_name = "192.168.1.162"
-client_id = "morph-customer"
+appliance_name = sys.argv[1]
+client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
+username = sys.argv[3]
+password = sys.argv[4]
 url = "https://" + appliance_name + "/oauth/token?grant_type=refresh_token&client_id=" + client_id + "&scope=write"
-username = sys.argv[1]
-password = sys.argv[2]
 current = get_current_token(appliance_name, client_id, username, password)
 
 response = refresh_access_token(appliance_name, client_id, current['refresh_token'])
