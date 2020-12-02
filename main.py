@@ -13,7 +13,7 @@ refresh_token = sys.argv[3]
 
 # get current bearer token using on username/password
 response = refresh_access_token(appliance_name, client_id, refresh_token)
-
+print(reponse)
 new_bearer = response['access_token']
 new_refresh = response['refresh_token']
 
