@@ -4,8 +4,11 @@ from morph_api_tomcart import refresh_access_token, create_cypher, days_until_ex
 # TODO: push API check
 # TODO: check key expiration duration
 # TODO: motd countdown
-#
 
+# 20201203
+# TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
+# TODO: Single notification on threshold meet
+# TODO: - deferred: additional/paralell check with differnt severitiy levelvvvlvlvlvl
 
 # command line arguments - required
 appliance_name = sys.argv[1]
