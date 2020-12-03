@@ -1,5 +1,6 @@
 import sys
-from morph_api_tomcart import refresh_access_token, create_cypher
+from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire
+
 # TODO: push API check
 # TODO: check key expiration duration
 # TODO: motd countdown
@@ -9,14 +10,21 @@ from morph_api_tomcart import refresh_access_token, create_cypher
 # command line arguments - required
 appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
-refresh_token = sys.argv[3]
-
+access_token = sys.argv[3]
+refresh_token = sys.argv[4]
 # get current bearer token using on username/password
-response = refresh_access_token(appliance_name, client_id, refresh_token)
-print(response)
-new_bearer = response['access_token']
-new_refresh = response['refresh_token']
+try:
+    expiry = days_until_expire(appliance_name, "access_token", access_token)
+    if expiry <= 1:
+        print("Rotating access token and updating API key")
+        response = refresh_access_token(appliance_name, client_id, refresh_token)
+        new_bearer = response['access_token']
+        new_refresh = response['refresh_token']
 
-# create/update cypher entry for access/bearer token
-create_cypher(new_bearer, "access_token", appliance_name, new_bearer)
-create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer)
+        # create/update cypher entry for access/bearer token
+        create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "3d")
+        create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "3d")
+    else:
+        print("API key has not yet expired. " + str(expiry) + " days remaining on lease.")
+except:
+    print("Unable to update cypher entry")
