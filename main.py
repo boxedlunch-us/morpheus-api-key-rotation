@@ -7,6 +7,9 @@ from morph_api_tomcart import refresh_access_token, create_cypher, days_until_ex
 # TODO: motd countdown
 # 20201214
 # TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
+#      1. Lack of API Access - DONE
+#      2. Cypher entry missing (access and/or refresh) - DONE
+#      3. Incorrect refresh token
 
 # 20201203
 # TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
@@ -18,23 +21,35 @@ appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
 access_token = sys.argv[3]
 refresh_token = sys.argv[4]
-# get current bearer token using on username/password
+
+# CRITICAL: Check to see if there is access to Morpheus API
 whoami_url = "https://" + appliance_name + "/api/whoami"
 try:
     api_check = execute_rest("GET", whoami_url, access_token, "")
     if "error" in api_check.keys():
+        error_desc = api_check['error_description']
         raise KeyError
-except:
-    err = sys.exc_info()
-    print(err)
-    sys.exit("Unable to verify access to the API.")
+
+except KeyError:
+
+    sys.exit("Unable to verify access to the API." + error_desc)
+
+# WARNING: Check for missing cypher entries - mainly refresh as we wouldn't make it this far without access token
+secret_name = 'secret/refresh_token'
+cypher_url = "https://" + appliance_name + "/api/cypher/secret/" + secret_name
 try:
-    expiry = days_until_expire(appliance_name, "access_token", access_token)
-except:
-    err = sys.exc_info()
-    print("Error: %s" % err[0])
-    print("Error: %s" % err[1])
-    sys.exit("Unable to acquire the cypher entry")
+    entry_check = execute_rest("GET", cypher_url, access_token, "")
+    if not entry_check['success']:
+        raise ValueError
+
+
+except ValueError:
+
+    sys.exit("Unable to retrieve Cypher entry for " + secret_name)
+
+
+expiry = days_until_expire(appliance_name, "access_token", access_token)
+
 
 if expiry <= 1:
     print("Rotating access token and updating API key")
