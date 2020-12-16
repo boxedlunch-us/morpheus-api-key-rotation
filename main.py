@@ -2,14 +2,13 @@ import sys
 from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest, \
     execute_rest_no_bearer
 
-# TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
-#      3. Incorrect refresh token
-
 # TODO: critical error message standardization - custom error classes
 # TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
 # TODO: Single notification on threshold meet
 # TODO: - deferred: additional/paralell check with differnt severitiy levelvvvlvlvlvl
-
+# TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
+#      3. Incorrect refresh token
+# TODO: - deferred: Restructure morph_api package - too many functions; classes to separate logical constructs
 
 # command line arguments - required
 appliance_name = sys.argv[1]
@@ -26,7 +25,6 @@ info_payload = '{"success":true, "message": "Healthy message"}'
 def push_api(payload, api_key):
     push_api_url = "https://" + appliance_name + "/api/monitoring/push?apiKey=" + api_key
     execute_rest_no_bearer("POST", push_api_url, access_token, payload)
-
 
 
 # CRITICAL: Check to see if there is access to Morpheus API
