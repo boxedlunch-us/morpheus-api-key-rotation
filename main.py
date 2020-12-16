@@ -1,12 +1,11 @@
 import sys
-from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest
+from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest, \
+    execute_rest_no_bearer
 
 # TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
-#      1. Lack of API Access - DONE
-#      2. Cypher entry missing (access and/or refresh) - DONE
 #      3. Incorrect refresh token
-# TODO: push API check
 
+# TODO: critical error message standardization - custom error classes
 # TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
 # TODO: Single notification on threshold meet
 # TODO: - deferred: additional/paralell check with differnt severitiy levelvvvlvlvlvl
@@ -17,10 +16,17 @@ appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
 access_token = sys.argv[3]
 refresh_token = sys.argv[4]
+critical_check_apikey = "da622388-011c-4963-bae1-b4a655a3fbc4"
+info_check_apikey = "da622388-011c-4963-bae1-b4a655a3fbc4"
+critical_payload = '{"success":false, "message": "Critical error message"}'
+warning_payload = '{"success":false, "message": "Warning error message"}'
+info_payload = '{"success":true, "message": "Healthy message"}'
 
 
-def push_api():
-    execute_rest("POST", push_api_url, access_token, "")
+def push_api(payload, api_key):
+    push_api_url = "https://" + appliance_name + "/api/monitoring/push?apiKey=" + api_key
+    execute_rest_no_bearer("POST", push_api_url, access_token, payload)
+
 
 
 # CRITICAL: Check to see if there is access to Morpheus API
@@ -32,7 +38,7 @@ try:
         raise KeyError
 
 except KeyError:
-
+    push_api(critical_payload, critical_check_apikey)
     sys.exit("Unable to verify access to the API." + error_desc)
 
 # CRITICAL: Check for missing cypher entries - mainly refresh as we wouldn't make it this far without access token
@@ -45,7 +51,7 @@ try:
 
 
 except ValueError:
-
+    push_api(critical_payload, critical_check_apikey)
     sys.exit("Unable to retrieve Cypher entry for " + secret_name)
 
 expiry = days_until_expire(appliance_name, "access_token", access_token)
@@ -62,4 +68,5 @@ if expiry <= 1:
     create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "3d")
     create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "3d")
 else:
+    push_api(info_payload, info_check_apikey)
     print("API key has not yet expired. " + str(expiry) + " days remaining on lease.")
