@@ -2,7 +2,6 @@ import sys
 from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest, \
     execute_rest_no_bearer
 
-
 # TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
 # TODO: Single notification on threshold meet
 # TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
@@ -25,7 +24,7 @@ success_payload = '{"success":true, "message": "Healthy message"}'
 
 def push_api(payload, api_key):
     push_api_url = "https://" + appliance_name + "/api/monitoring/push?apiKey=" + api_key
-    execute_rest_no_bearer("POST", push_api_url, access_token, payload)
+    execute_rest_no_bearer("POST", push_api_url, payload)
 
 
 # CRITICAL: Check to see if there is access to Morpheus API
@@ -41,7 +40,7 @@ except KeyError:
     sys.exit("Unable to verify access to the API." + error_desc)
 
 # CRITICAL: Check for missing cypher entries - mainly refresh as we wouldn't make it this far without access token
-secret_name = 'secret/refresh_token'
+secret_name = 'refresh_token'
 cypher_url = "https://" + appliance_name + "/api/cypher/secret/" + secret_name
 try:
     entry_check = execute_rest("GET", cypher_url, access_token, "")
@@ -57,10 +56,6 @@ except ValueError:
 # 7 days pushes warning to api
 # 1 or fewer rotates and pushes success to api upon completion
 expiry = days_until_expire(appliance_name, "access_token", access_token)
-if expiry == 7:
-    print("Key expires in 7 days.")
-    push_api(warning_payload, warning_check_apikey)
-
 
 if expiry <= 1:
     print("Rotating access token and updating API key")
@@ -75,8 +70,11 @@ if expiry <= 1:
     create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "3d")
     push_api(success_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
+elif expiry <= 7:
+    print("Key expires in 7 days or less.")
+    push_api(warning_payload, warning_check_apikey)
+    push_api(success_payload, critical_check_apikey)
 else:
     print("API key has not yet expired. " + str(expiry) + " days remaining on lease.")
     push_api(success_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
-
