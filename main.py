@@ -17,8 +17,8 @@ appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
 access_token = sys.argv[3]
 refresh_token = sys.argv[4]
-critical_check_apikey = "da622388-011c-4963-bae1-b4a655a3fbc4"
-warning_check_apikey = "0c38e736-fb04-4bee-a614-3c935188e833"
+critical_check_apikey = sys.argv[5]
+warning_check_apikey = sys.argv[6]
 
 critical_payload = '{"success":false, "message": "Critical error message"}'
 warning_payload = '{"success":false, "message": "Warning error message"}'
