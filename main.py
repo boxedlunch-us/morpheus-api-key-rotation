@@ -11,7 +11,8 @@ from morph_api_tomcart import refresh_access_token, create_cypher, days_until_ex
 # TODO: If any command arguments are null - error
 # TODO: rollback if cypher writes fail
 # TODO: Removal of extraneous pushAPI
-
+# TODO: Account for PushAPI failures
+# TODO: Lease duration as argument
 # command line arguments - required
 appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
@@ -40,7 +41,7 @@ try:
 
 except KeyError:
     push_api(critical_payload, critical_check_apikey)
-    sys.exit("Unable to verify access to the API." + error_desc)
+    sys.exit("Unable to verify access to the API. " + error_desc)
 
 # CRITICAL: Check for missing cypher entries - mainly refresh as we wouldn't make it this far without access token
 secret_name = 'refresh_token'
@@ -69,8 +70,8 @@ if expiry <= 1:
     new_refresh = response['refresh_token']
 
     # create/update cypher entry for access/bearer token
-    create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "3d")
-    create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "3d")
+    create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "90d")
+    create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "90d")
     push_api(success_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
 elif expiry <= 7:
