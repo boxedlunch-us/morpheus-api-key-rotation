@@ -1,0 +1,9 @@
+appliance:
+  name: 192.168.1.162
+api:
+  client_id: morph-customer
+  access_token: 08c13434-0670-4ef7-b08f-ede57f0c836b
+  refresh_token: 622a8c30-b496-46ab-88c7-9862d74dff0a
+monitoring:
+  critical_check_apikey: da622388-011c-4963-bae1-b4a655a3fbc4
+  warning_check_apikey: 0c38e736-fb04-4bee-a614-3c935188e833
