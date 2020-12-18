@@ -1,7 +1,9 @@
 import sys
+import yaml
 from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest, \
     execute_rest_no_bearer
 
+from morpheuscypher import Cypher
 # TODO: Single notification on threshold meet
 # TODO: - deferred: Restructure morph_api package - too many functions; classes to separate logical constructs
 #       a. critical error message standardization - custom error classes
@@ -9,13 +11,19 @@ from morph_api_tomcart import refresh_access_token, create_cypher, days_until_ex
 # TODO: rollback if cypher writes fail
 # TODO: Config file - arguments are too numerous
 
-# command line arguments - required
-appliance_name = sys.argv[1]
-client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
-access_token = sys.argv[3]
-refresh_token = sys.argv[4]
-critical_check_apikey = sys.argv[5]
-warning_check_apikey = sys.argv[6]
+# command line args
+access_token = sys.argv[1]
+refresh_token = sys.argv[2]
+
+# load parameters from config file
+with open("config.yaml", "r") as yaml_config:
+    cfg = yaml.load(yaml_config, Loader=yaml.FullLoader)
+
+appliance_name = cfg['appliance']['name']
+client_id = cfg['api']['client_id']
+critical_check_apikey = cfg['monitoring']['critical_check_apikey']
+warning_check_apikey = cfg['monitoring']['warning_check_apikey']
+lease_duration = cfg['api']['lease']
 
 critical_payload = '{"success":false, "message": "Critical error message"}'
 warning_payload = '{"success":false, "message": "Warning error message"}'
@@ -75,8 +83,8 @@ if expiry <= 1:
 
     # create/update cypher entry for access/bearer token
     # TODO: Lease duration as argument
-    create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "90d")
-    create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "90d")
+    create_cypher(new_bearer, "access_token", appliance_name, new_bearer, lease_duration)
+    create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, lease_duration)
     push_api(success_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
 elif expiry <= 7:
