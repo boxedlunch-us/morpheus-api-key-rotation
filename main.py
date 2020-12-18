@@ -2,17 +2,13 @@ import sys
 from morph_api_tomcart import refresh_access_token, create_cypher, days_until_expire, execute_rest, \
     execute_rest_no_bearer
 
-# TODO: Setup Alert Rule - no response/bad response (job fail/connectivity)
 # TODO: Single notification on threshold meet
-# TODO: Failure conditions: lack of cypher entry, incorrect access token, incorrect refresh token
-#      3. Incorrect refresh token
 # TODO: - deferred: Restructure morph_api package - too many functions; classes to separate logical constructs
 #       a. critical error message standardization - custom error classes
 # TODO: If any command arguments are null - error
 # TODO: rollback if cypher writes fail
-# TODO: Removal of extraneous pushAPI
-# TODO: Account for PushAPI failures
-# TODO: Lease duration as argument
+# TODO: Config file - arguments are too numerous
+
 # command line arguments - required
 appliance_name = sys.argv[1]
 client_id = sys.argv[2]  # morph-api, morph-automation, morph-cli, morph-customer
@@ -40,6 +36,7 @@ try:
         raise KeyError
 
 except KeyError:
+    # TODO: Account for PushAPI failures
     push_api(critical_payload, critical_check_apikey)
     sys.exit("Unable to verify access to the API. " + error_desc)
 
@@ -65,17 +62,26 @@ if expiry <= 1:
     print("Rotating access token and updating API key")
 
     # New tokens to be passed on
-    response = refresh_access_token(appliance_name, client_id, refresh_token)
+    try:
+        response = refresh_access_token(appliance_name, client_id, refresh_token)
+        if "error" in response.keys():
+            raise ValueError
+    except ValueError:
+        push_api(critical_payload, critical_check_apikey)
+        sys.exit("Unable to rotate key due to: " + response['error'])
+
     new_bearer = response['access_token']
     new_refresh = response['refresh_token']
 
     # create/update cypher entry for access/bearer token
+    # TODO: Lease duration as argument
     create_cypher(new_bearer, "access_token", appliance_name, new_bearer, "90d")
     create_cypher(new_refresh, "refresh_token", appliance_name, new_bearer, "90d")
     push_api(success_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
 elif expiry <= 7:
     print("Key expires in 7 days or less.")
+    # TODO: Removal of extraneous pushAPI
     push_api(warning_payload, warning_check_apikey)
     push_api(success_payload, critical_check_apikey)
 else:
